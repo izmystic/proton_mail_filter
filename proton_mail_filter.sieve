@@ -2,6 +2,25 @@ require ["fileinto", "regex", "envelope"];
 
 /**
  * -----------------------------------------------------------------------------
+ * SECTION: Updates & Development
+ * DESCRIPTION: Filters software development notifications AND account security/
+ * login alerts.
+ * -----------------------------------------------------------------------------
+ */
+if anyof (
+    /* 1. Infrastructure Check: Matches List-IDs and Senders for dev platforms */
+    header :regex "list-id" "(github\\.com|gitlab\\.com|npmjs\\.org|stackoverflow\\.com|medium\\.com)",
+    header :regex "from" "@(github\\.com|gitlab\\.com|npmjs\\.org|stackoverflow\\.com|medium\\.com)",
+
+    /* 2. Keyword Check: Matches dev-specific terms AND account security terms.*/
+    header :regex "subject" "\\b(security alert|access token|pipeline|merge request|pull request|password|login|steam guard|verification|recovery|account)\\b"
+) {
+    fileinto "Updates";
+    stop;
+}
+
+/**
+ * -----------------------------------------------------------------------------
  * SECTION: Purchases & Finance
  * DESCRIPTION: Routes transactional emails (receipts, invoices) to the
  * "Purchases" folder.
@@ -11,8 +30,7 @@ if anyof (
     /* 1. Sender Check: Matches specific transactional domains in the 'From' header */
     header :regex "from" "@(paypal\\.com|stripe\\.com|square\\.com|amazon\\.com|ebay\\.com|shop\\.app|steampowered\\.com)",
 
-    /* 2. Subject Check: Looks for specific billing keywords.
-           NOTE: The \\b ensures we match whole words only (e.g., 'receipt' vs 'preceipt'). */
+    /* 2. Subject Check: Looks for specific billing keywords. */
     header :regex "subject" "\\b(receipt|order confirmation|invoice|payment processed|billing statement)\\b"
 ) {
     fileinto "Purchases";
@@ -30,44 +48,13 @@ if anyof (
     /* 1. List-ID Check: Matches standard mailing list IDs for social platforms */
     header :regex "list-id" "(facebook\\.com|twitter\\.com|linkedin\\.com|instagram\\.com|tiktok\\.com|pinterest\\.com|reddit\\.com|discordapp\\.com|twitch\\.tv|quora\\.com|nextdoor\\.com)",
 
-    /* 2. Sender Check: Matches domains AND subdomains.
-       COVERS:
-       - Meta: Facebook, Instagram, Threads, WhatsApp
-       - X/Twitter, LinkedIn, TikTok, Pinterest, Snapchat
-       - Gaming/Chat: Discord, Twitch, Steam
-       - Content/Forums: Reddit, YouTube, Quora, Nextdoor, Tumblr, Medium
-       NOTE: The pattern '@(.*\\.)?' captures any subdomain (e.g., 'no-reply@mail.twitch.tv') */
+    /* 2. Sender Check: Matches domains AND subdomains. */
     header :regex "from" "@(.*\\.)?(facebookmail\\.com|twitter\\.com|x\\.com|linkedin\\.com|instagram\\.com|tiktok\\.com|pinterest\\.com|snapchat\\.com|redditmail\\.com|reddit\\.com|discord\\.com|twitch\\.tv|youtube\\.com|quora\\.com|nextdoor\\.com|tumblr\\.com|medium\\.com)",
 
-    /* 3. Context Check: Catches common social interaction keywords in the subject.
-       Matches:
-       - "Friend request", "Follow request"
-       - "Tagged you", "Mentioned you"
-       - "Retweeted", "Shared a post", "New story"
-       - "Login verification" (common from Discord/Twitch)
-       - "Digest" (common from Reddit/Quora) */
+    /* 3. Context Check: Catches common social interaction keywords. */
     header :regex "subject" "\\b(friend request|tagged you|mentioned you|retweeted|shared|story|login|verification code|new follower|suggested|digest|community|thread|someone sent you|new pin|new snap)\\b"
 ) {
     fileinto "Social";
-    stop;
-}
-
-/**
- * -----------------------------------------------------------------------------
- * SECTION: Updates & Development
- * DESCRIPTION: Filters software development notifications, security alerts,
- * and CI/CD pipeline updates.
- * -----------------------------------------------------------------------------
- */
-if anyof (
-    /* 1. Infrastructure Check: Matches List-IDs and Senders for dev platforms */
-    header :regex "list-id" "(github\\.com|gitlab\\.com|npmjs\\.org|stackoverflow\\.com|medium\\.com)",
-    header :regex "from" "@(github\\.com|gitlab\\.com|npmjs\\.org|stackoverflow\\.com|medium\\.com)",
-
-    /* 2. Keyword Check: Matches dev-specific terms (PRs, tokens, pipelines) */
-    header :regex "subject" "\\b(security alert|access token|pipeline|merge request|pull request)\\b"
-) {
-    fileinto "Updates";
     stop;
 }
 
@@ -78,13 +65,13 @@ if anyof (
  * -----------------------------------------------------------------------------
  */
 if anyof (
-/* 1. Platform Check: Matches common mailing list providers */
+    /* 1. Platform Check: Matches common mailing list providers */
     header :regex "list-id" "(googlegroups\\.com|yahoogroups\\.com|listserv|mailinglist)",
 
     /* 2. Header Check: Looks for 'Precedence: bulk' or 'list' headers */
     header :contains "precedence" ["list", "bulk"],
 
-    /* 3. Existence Check: Checks if the 'list-post' header exists (standard for lists) */
+    /* 3. Existence Check: Checks if the 'list-post' header exists */
     exists "list-post"
 ) {
     fileinto "Forums";
