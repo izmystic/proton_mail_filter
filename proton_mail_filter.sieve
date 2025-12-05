@@ -12,8 +12,21 @@ if anyof (
     header :regex "list-id" "(github\\.com|gitlab\\.com|npmjs\\.org|stackoverflow\\.com|medium\\.com)",
     header :regex "from" "@(github\\.com|gitlab\\.com|npmjs\\.org|stackoverflow\\.com|medium\\.com)",
 
-    /* 2. Keyword Check: Matches dev-specific terms AND account security terms.*/
-    header :regex "subject" "\\b(security alert|access token|pipeline|merge request|pull request|password|login|steam guard|verification|recovery|account)\\b"
+    /* 2. Keyword Check: Matches dev-specific terms AND account security terms. */
+    /* FIX: Converted to :contains list to avoid regex boundary failures on phrases like "Steam Guard" */
+    header :contains "subject" [
+        "security alert",
+        "access token",
+        "pipeline",
+        "merge request",
+        "pull request",
+        "password",
+        "login",
+        "steam guard",
+        "verification",
+        "recovery",
+        "account"
+    ]
 ) {
     fileinto "Updates";
     stop;
@@ -31,7 +44,14 @@ if anyof (
     header :regex "from" "@(paypal\\.com|stripe\\.com|square\\.com|amazon\\.com|ebay\\.com|shop\\.app|steampowered\\.com)",
 
     /* 2. Subject Check: Looks for specific billing keywords. */
-    header :regex "subject" "\\b(receipt|order confirmation|invoice|payment processed|billing statement)\\b"
+    /* FIX: Converted to :contains list for better multi-word matching */
+    header :contains "subject" [
+        "receipt",
+        "order confirmation",
+        "invoice",
+        "payment processed",
+        "billing statement"
+    ]
 ) {
     fileinto "Purchases";
     stop;
@@ -52,7 +72,25 @@ if anyof (
     header :regex "from" "@(.*\\.)?(facebookmail\\.com|twitter\\.com|x\\.com|linkedin\\.com|instagram\\.com|tiktok\\.com|pinterest\\.com|snapchat\\.com|redditmail\\.com|reddit\\.com|discord\\.com|twitch\\.tv|youtube\\.com|quora\\.com|nextdoor\\.com|tumblr\\.com|medium\\.com)",
 
     /* 3. Context Check: Catches common social interaction keywords. */
-    header :regex "subject" "\\b(friend request|tagged you|mentioned you|retweeted|shared|story|login|verification code|new follower|suggested|digest|community|thread|someone sent you|new pin|new snap)\\b"
+    /* FIX: Converted to :contains list to reliably catch phrases like "friend request" */
+    header :contains "subject" [
+        "friend request",
+        "tagged you",
+        "mentioned you",
+        "retweeted",
+        "shared",
+        "story",
+        "login",
+        "verification code",
+        "new follower",
+        "suggested",
+        "digest",
+        "community",
+        "thread",
+        "someone sent you",
+        "new pin",
+        "new snap"
+    ]
 ) {
     fileinto "Social";
     stop;
@@ -93,7 +131,15 @@ if anyof (
     exists "list-unsubscribe",
 
     /* 3. Keyword Check: Matches common sales terminology */
-    header :regex "subject" "\\b(sale|discount|limited time|\\% off|coupon|clearance)\\b"
+    /* FIX: Converted to :contains list. Note: "% off" will now match reliably without regex escaping issues. */
+    header :contains "subject" [
+        "sale",
+        "discount",
+        "limited time",
+        "% off",
+        "coupon",
+        "clearance"
+    ]
 ) {
     fileinto "Promotions";
     stop;
