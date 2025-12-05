@@ -13,19 +13,28 @@ if anyof (
     header :regex "from" "@(github\\.com|gitlab\\.com|npmjs\\.org|stackoverflow\\.com|medium\\.com)",
 
     /* 2. Keyword Check: Matches dev-specific terms AND account security terms. */
-    /* FIX: Converted to :contains list to avoid regex boundary failures on phrases like "Steam Guard" */
+    /* FIX: Added missing security phrases for FB/Reddit/LinkedIn/Instagram */
     header :contains "subject" [
         "security alert",
+        "security code",
         "access token",
         "pipeline",
         "merge request",
         "pull request",
         "password",
         "login",
+        "log in",
         "steam guard",
         "verification",
+        "verify",
         "recovery",
-        "account"
+        "account",
+        "confirm this email",
+        "new device",
+        "email removed",
+        "email address has been changed",
+        "your pin",
+        "did you just"
     ]
 ) {
     fileinto "Updates";
@@ -44,7 +53,6 @@ if anyof (
     header :regex "from" "@(paypal\\.com|stripe\\.com|square\\.com|amazon\\.com|ebay\\.com|shop\\.app|steampowered\\.com)",
 
     /* 2. Subject Check: Looks for specific billing keywords. */
-    /* FIX: Converted to :contains list for better multi-word matching */
     header :contains "subject" [
         "receipt",
         "order confirmation",
@@ -72,7 +80,6 @@ if anyof (
     header :regex "from" "@(.*\\.)?(facebookmail\\.com|twitter\\.com|x\\.com|linkedin\\.com|instagram\\.com|tiktok\\.com|pinterest\\.com|snapchat\\.com|redditmail\\.com|reddit\\.com|discord\\.com|twitch\\.tv|youtube\\.com|quora\\.com|nextdoor\\.com|tumblr\\.com|medium\\.com)",
 
     /* 3. Context Check: Catches common social interaction keywords. */
-    /* FIX: Converted to :contains list to reliably catch phrases like "friend request" */
     header :contains "subject" [
         "friend request",
         "tagged you",
@@ -131,7 +138,6 @@ if anyof (
     exists "list-unsubscribe",
 
     /* 3. Keyword Check: Matches common sales terminology */
-    /* FIX: Converted to :contains list. Note: "% off" will now match reliably without regex escaping issues. */
     header :contains "subject" [
         "sale",
         "discount",
