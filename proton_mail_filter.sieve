@@ -13,7 +13,7 @@ if anyof (
     header :regex "from" "@(github\\.com|gitlab\\.com|npmjs\\.org|stackoverflow\\.com|medium\\.com)",
 
     /* 2. Keyword Check: Matches dev-specific terms AND account security terms. */
-    /* FIX: Added missing security phrases for FB/Reddit/LinkedIn/Instagram */
+    /* FIX: Consolidated and expanded security/account change phrases from social and commerce platforms */
     header :contains "subject" [
         "security alert",
         "security code",
@@ -33,8 +33,13 @@ if anyof (
         "new device",
         "email removed",
         "email address has been changed",
+        "email address has been added",
         "your pin",
-        "did you just"
+        "did you just",
+        "logged in",
+        "trusted device",
+        "passkey",
+        "Two-Factor Authentication"
     ]
 ) {
     fileinto "Updates";
@@ -50,15 +55,19 @@ if anyof (
  */
 if anyof (
     /* 1. Sender Check: Matches specific transactional domains in the 'From' header */
-    header :regex "from" "@(paypal\\.com|stripe\\.com|square\\.com|amazon\\.com|ebay\\.com|shop\\.app|steampowered\\.com)",
+    /* FIX: Added venmo.com for transactional history */
+    header :regex "from" "@(paypal\\.com|stripe\\.com|square\\.com|amazon\\.com|ebay\\.com|shop\\.app|steampowered\\.com|venmo\\.com)",
 
     /* 2. Subject Check: Looks for specific billing keywords. */
+    /* FIX: Added transactional/membership phrases */
     header :contains "subject" [
         "receipt",
         "order confirmation",
         "invoice",
         "payment processed",
-        "billing statement"
+        "billing statement",
+        "transaction history",
+        "membership has been canceled"
     ]
 ) {
     fileinto "Purchases";
@@ -77,7 +86,8 @@ if anyof (
     header :regex "list-id" "(facebook\\.com|twitter\\.com|linkedin\\.com|instagram\\.com|tiktok\\.com|pinterest\\.com|reddit\\.com|discordapp\\.com|twitch\\.tv|quora\\.com|nextdoor\\.com)",
 
     /* 2. Sender Check: Matches domains AND subdomains. */
-    header :regex "from" "@(.*\\.)?(facebookmail\\.com|twitter\\.com|x\\.com|linkedin\\.com|instagram\\.com|tiktok\\.com|pinterest\\.com|snapchat\\.com|redditmail\\.com|reddit\\.com|discord\\.com|twitch\\.tv|youtube\\.com|quora\\.com|nextdoor\\.com|tumblr\\.com|medium\\.com)",
+    /* FIX: Added cfx.re for community/forum traffic */
+    header :regex "from" "@(.*\\.)?(facebookmail\\.com|twitter\\.com|x\\.com|linkedin\\.com|instagram\\.com|tiktok\\.com|pinterest\\.com|snapchat\\.com|redditmail\\.com|reddit\\.com|discord\\.com|twitch\\.tv|youtube\\.com|quora\\.com|nextdoor\\.com|tumblr\\.com|medium\\.com|cfx\\.re)",
 
     /* 3. Context Check: Catches common social interaction keywords. */
     header :contains "subject" [
