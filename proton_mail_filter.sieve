@@ -1,4 +1,4 @@
-require ["fileinto", "regex", "envelope"];
+require ["fileinto", "regex"];
 
 /**
  * -----------------------------------------------------------------------------
@@ -8,12 +8,9 @@ require ["fileinto", "regex", "envelope"];
  * -----------------------------------------------------------------------------
  */
 if anyof (
-    /* 1. Infrastructure Check: Matches List-IDs and Senders for dev platforms */
-    header :regex "list-id" "(github\\.com|gitlab\\.com|npmjs\\.org|stackoverflow\\.com|medium\\.com)",
-    header :regex "from" "@(github\\.com|gitlab\\.com|npmjs\\.org|stackoverflow\\.com|medium\\.com)",
+    header :regex "list-id" "(github\\.com|gitlab\\.com|npmjs\\.org|stackoverflow\\.com)",
+    header :regex "from" "@(github\\.com|gitlab\\.com|npmjs\\.org|stackoverflow\\.com)",
 
-    /* 2. Keyword Check: Matches dev-specific terms AND account security terms. */
-    /* FIX: Consolidated and expanded security/account change phrases from social and commerce platforms */
     header :contains "subject" [
         "security alert",
         "security code",
@@ -24,13 +21,14 @@ if anyof (
         "password",
         "login",
         "log in",
+        "sign-in",
+        "sign in",
         "steam guard",
         "verification",
         "verify",
         "recovery",
-        "account",
-        "confirm this email",
         "new device",
+        "confirm this email",
         "email removed",
         "email address has been changed",
         "email address has been added",
@@ -39,7 +37,19 @@ if anyof (
         "logged in",
         "trusted device",
         "passkey",
-        "Two-Factor Authentication"
+        "two-factor authentication",
+        "2-step verification",
+        "sign-in attempt",
+        "unusual activity",
+        "suspicious activity",
+        "unauthorized access",
+        "account suspended",
+        "account locked",
+        "account compromised",
+        "account blocked",
+        "account deactivated",
+        "account limited",
+        "account warning"
     ]
 ) {
     fileinto "Updates";
@@ -49,24 +59,30 @@ if anyof (
 /**
  * -----------------------------------------------------------------------------
  * SECTION: Purchases & Finance
- * DESCRIPTION: Routes transactional emails (receipts, invoices) to the
- * "Purchases" folder.
+ * DESCRIPTION: Routes transactional emails (receipts, invoices, shipping) to
+ * the "Purchases" folder.
  * -----------------------------------------------------------------------------
  */
 if anyof (
-    /* 1. Sender Check: Matches specific transactional domains in the 'From' header */
-    /* FIX: Added venmo.com for transactional history */
-    header :regex "from" "@(paypal\\.com|stripe\\.com|square\\.com|amazon\\.com|ebay\\.com|shop\\.app|steampowered\\.com|venmo\\.com)",
+    header :regex "from" "@(paypal\\.com|stripe\\.com|square\\.com|amazon\\.com|ebay\\.com|shop\\.app|steampowered\\.com|venmo\\.com|etsy\\.com|walmart\\.com|target\\.com|bestbuy\\.com|newegg\\.com)",
 
-    /* 2. Subject Check: Looks for specific billing keywords. */
-    /* FIX: Added transactional/membership phrases */
     header :contains "subject" [
         "receipt",
         "order confirmation",
+        "your order",
+        "order has been",
+        "out for delivery",
+        "tracking number",
         "invoice",
         "payment processed",
+        "payment failed",
+        "payment confirmation",
         "billing statement",
         "transaction history",
+        "refund",
+        "subscription renewed",
+        "subscription canceled",
+        "subscription cancelled",
         "membership has been canceled"
     ]
 ) {
@@ -82,24 +98,20 @@ if anyof (
  * -----------------------------------------------------------------------------
  */
 if anyof (
-    /* 1. List-ID Check: Matches standard mailing list IDs for social platforms */
-    header :regex "list-id" "(facebook\\.com|twitter\\.com|linkedin\\.com|instagram\\.com|tiktok\\.com|pinterest\\.com|reddit\\.com|discordapp\\.com|twitch\\.tv|quora\\.com|nextdoor\\.com)",
+    header :regex "list-id" "(facebook\\.com|twitter\\.com|linkedin\\.com|instagram\\.com|tiktok\\.com|pinterest\\.com|reddit\\.com|discordapp\\.com|twitch\\.tv|quora\\.com|nextdoor\\.com|threads\\.net|bsky\\.app)",
 
-    /* 2. Sender Check: Matches domains AND subdomains. */
-    /* FIX: Added cfx.re for community/forum traffic */
-    header :regex "from" "@(.*\\.)?(facebookmail\\.com|twitter\\.com|x\\.com|linkedin\\.com|instagram\\.com|tiktok\\.com|pinterest\\.com|snapchat\\.com|redditmail\\.com|reddit\\.com|discord\\.com|twitch\\.tv|youtube\\.com|quora\\.com|nextdoor\\.com|tumblr\\.com|medium\\.com|cfx\\.re)",
+    header :regex "from" "@(.*\\.)?(facebookmail\\.com|twitter\\.com|x\\.com|linkedin\\.com|instagram\\.com|tiktok\\.com|pinterest\\.com|snapchat\\.com|redditmail\\.com|reddit\\.com|discord\\.com|twitch\\.tv|youtube\\.com|quora\\.com|nextdoor\\.com|tumblr\\.com|medium\\.com|cfx\\.re|threads\\.net|bsky\\.app)",
 
-    /* 3. Context Check: Catches common social interaction keywords. */
     header :contains "subject" [
         "friend request",
         "tagged you",
         "mentioned you",
         "retweeted",
-        "shared",
-        "story",
-        "login",
-        "verification code",
         "new follower",
+        "started following",
+        "liked your",
+        "commented on",
+        "replied to",
         "suggested",
         "digest",
         "community",
@@ -120,13 +132,8 @@ if anyof (
  * -----------------------------------------------------------------------------
  */
 if anyof (
-    /* 1. Platform Check: Matches common mailing list providers */
     header :regex "list-id" "(googlegroups\\.com|yahoogroups\\.com|listserv|mailinglist)",
-
-    /* 2. Header Check: Looks for 'Precedence: bulk' or 'list' headers */
     header :contains "precedence" ["list", "bulk"],
-
-    /* 3. Existence Check: Checks if the 'list-post' header exists */
     exists "list-post"
 ) {
     fileinto "Forums";
@@ -141,13 +148,8 @@ if anyof (
  * -----------------------------------------------------------------------------
  */
 if anyof (
-    /* 1. Sender Check: Matches known marketing automation domains */
     header :regex "from" "@(mailchimp\\.com|e\\.customeriomail\\.com|rsgsv\\.net)",
-
-    /* 2. Heuristic Check: If it has an 'unsubscribe' link, it is likely a newsletter */
     exists "list-unsubscribe",
-
-    /* 3. Keyword Check: Matches common sales terminology */
     header :contains "subject" [
         "sale",
         "discount",
